@@ -20,7 +20,6 @@
             overflow-x: hidden;
         }
 
-        /* анимированная сетка */
         .cyber-grid {
             position: fixed;
             top: 0;
@@ -59,7 +58,6 @@
             padding: 1.2rem 1.2rem 2rem;
         }
 
-        /* неоновые карточки — компактнее */
         .neon-card {
             background: rgba(8, 12, 30, 0.65);
             backdrop-filter: blur(12px);
@@ -111,6 +109,11 @@
             box-shadow: 0 0 15px #c084fc;
         }
 
+        .btn-off {
+            background: linear-gradient(95deg, #4b5563, #6b7280);
+            box-shadow: 0 0 4px #6b7280;
+        }
+
         .flex-2 {
             display: flex;
             flex-wrap: wrap;
@@ -123,7 +126,6 @@
             min-width: 260px;
         }
 
-        /* сканер — аккуратно, без заезжания */
         .scanner-box {
             display: flex;
             flex-direction: column;
@@ -148,16 +150,14 @@
             100% { box-shadow: 0 0 0 0 transparent; }
         }
 
-        .result-panel {
-            background: #030617b3;
+        .error-msg {
+            background: rgba(220, 38, 38, 0.2);
+            border-left: 4px solid #ef4444;
+            padding: 0.8rem;
             border-radius: 1rem;
-            padding: 0.6rem 1rem;
-            border-left: 4px solid #c084fc;
             font-size: 0.85rem;
-            word-break: break-all;
         }
 
-        /* мессенджер GOLUB */
         .msg-card {
             background: linear-gradient(125deg, #1e1b4e, #0b0f2a);
             border-radius: 1.5rem;
@@ -235,6 +235,64 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* Модальное окно для результата сканирования */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0a0f2a, #05081a);
+            border-radius: 2rem;
+            padding: 2rem;
+            max-width: 90%;
+            width: 450px;
+            text-align: center;
+            border: 2px solid #c084fc;
+            box-shadow: 0 0 50px rgba(168, 85, 247, 0.4);
+            animation: modalPop 0.3s ease-out;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .qr-result-text {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 1rem;
+            margin: 1rem 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .btn-home {
+            background: linear-gradient(95deg, #7c3aed, #c084fc);
+            padding: 12px 28px;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -252,13 +310,13 @@
     <div class="flex-2">
         <div class="neon-card fade-up">
             <h2>🧩 Как играть</h2>
-            <p style="font-size: 0.9rem; line-height: 1.45;">Команда получает первый QR → сканируете → внутри подсказка, где следующий. Цепочка приведёт к <strong>координатам приза 1000₽</strong>. С собой: телефон + любая сумка.</p>
-            <p style="margin-top: 10px; font-size: 0.85rem;">💡 Стартовый код на месте. Напишите в ЛС <strong>@mesto_mng</strong> для регистрации.</p>
+            <p style="line-height: 1.45;">Команда получает первый QR → сканируете → внутри подсказка, где следующий. Цепочка приведёт к <strong>координатам приза 1000₽</strong>. С собой: телефон + любая сумка.</p>
+            <p style="margin-top: 10px;">💡 Стартовый код на месте. Напишите в ЛС <strong>@mesto_mng</strong> для регистрации.</p>
         </div>
 
         <div class="neon-card fade-up">
             <h2>📡 Новости</h2>
-            <p style="font-size: 0.9rem;">Молодёжные ивенты Карачева:</p>
+            <p>Молодёжные ивенты Карачева:</p>
             <div class="social-row">
                 <a href="https://t.me/mestoKreall" target="_blank" class="social-icon">📱 Telegram‑канал</a>
                 <a href="https://t.me/mesto_mng" target="_blank" class="social-icon">✍️ ЛС организатора</a>
@@ -266,23 +324,23 @@
         </div>
     </div>
 
-    <!-- СКАНЕР — компактно и аккуратно -->
+    <!-- СКАНЕР с кнопкой Вкл/Выкл -->
     <div class="neon-card fade-up" style="margin-bottom: 1.2rem;">
         <h2>📲 QR‑сканер</h2>
         <div class="scanner-box">
             <div id="qr-reader"></div>
-            <div id="qr-result-area" class="result-panel" style="display: none;">
-                🎯 <span id="qr-result-text"></span>
-            </div>
-            <button id="reset-scanner" class="btn-cyber" style="align-self: flex-start;">⟳ Перезапуск</button>
+            <div id="scanner-status" class="result-panel" style="display: none;"></div>
+            <div id="camera-error" class="error-msg" style="display: none;"></div>
+            <button id="toggle-camera" class="btn-cyber">📷 Включить камеру</button>
         </div>
     </div>
 
-    <!-- РЕКЛАМА GOLUB (российский мессенджер, без звонков) -->
+    <!-- РЕКЛАМА GOLUB -->
     <div id="messengerBlock" class="neon-card fade-up" style="cursor: pointer;">
         <h2>🇷🇺 Российский мессенджер</h2>
         <div id="dynamic-messenger" class="msg-card">
-            <!-- JS вставит вариант GOLUB -->
+            <div class="msg-title">💙 GOLUB</div>
+            <p style="margin: 8px 0 0;">Безопасный обмен текстом и файлами</p>
         </div>
         <p style="margin-top: 8px; font-size: 0.7rem; text-align: center;">✨ Нажми — открыть GOLUB ✨</p>
     </div>
@@ -290,6 +348,15 @@
     <footer>
         QR Город · 2 мая 12:00–15:00 · Вход свободный · Приз 1000₽
     </footer>
+</div>
+
+<!-- Модальное окно для результата сканирования -->
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <h3>🔓 РЕЗУЛЬТАТ</h3>
+        <div id="modalResultText" class="qr-result-text"></div>
+        <button id="homeButton" class="btn-cyber btn-home">🏠 На главную</button>
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -348,24 +415,23 @@
     faders.forEach(el => observer.observe(el));
     setTimeout(() => faders.forEach(el => el.classList.add('visible')), 100);
 
-    // РЕКЛАМА GOLUB (разные тексты, но всегда GOLUB, без звонков)
+    // РЕКЛАМА GOLUB
     const golubVariants = [
-        { desc: "Безопасный обмен текстом и файлами. Российские сервера." },
-        { desc: "Приватность. Никакой слежки. Работает в РФ." },
-        { desc: "Только своё. GOLUB — для команд и квестов." },
-        { desc: "Мгновенные сообщения. Защищённый код." },
-        { desc: "Независимый мессенджер. Данные под защитой." }
+        "Безопасный обмен текстом и файлами. Российские сервера.",
+        "Приватность. Никакой слежки. Работает в РФ.",
+        "Только своё. GOLUB — для команд и квестов.",
+        "Мгновенные сообщения. Защищённый код.",
+        "Независимый мессенджер. Данные под защитой."
     ];
     function getRandomGolub() {
         return golubVariants[Math.floor(Math.random() * golubVariants.length)];
     }
     function renderMessenger() {
-        const v = getRandomGolub();
         const container = document.getElementById('dynamic-messenger');
         if(container) {
             container.innerHTML = `
                 <div class="msg-title">💙 GOLUB</div>
-                <p style="margin: 8px 0 0; font-size: 0.8rem;">${v.desc}</p>
+                <p style="margin: 8px 0 0; font-size: 0.8rem;">${getRandomGolub()}</p>
                 <div style="margin-top: 8px; font-size:0.65rem;">✨ твой вариант ✨</div>
             `;
             container.setAttribute('data-link', 'https://golub-org.vercel.app/');
@@ -384,38 +450,125 @@
         }
     });
 
-    // QR СКАНЕР
+    // QR СКАНЕР с кнопкой Вкл/Выкл и обработкой ошибок
     let html5QrCode = null;
     let isScanning = false;
-    function startScanner() {
+    const qrContainerId = "qr-reader";
+    const toggleBtn = document.getElementById('toggle-camera');
+    const statusDiv = document.getElementById('scanner-status');
+    const errorDiv = document.getElementById('camera-error');
+
+    function showStatus(msg, isError = false) {
+        statusDiv.style.display = 'block';
+        statusDiv.textContent = msg;
+        statusDiv.style.background = isError ? 'rgba(220,38,38,0.2)' : 'rgba(96,165,250,0.2)';
+        statusDiv.style.borderLeft = isError ? '4px solid #ef4444' : '4px solid #60a5fa';
+        if(isError) errorDiv.style.display = 'none';
+        setTimeout(() => {
+            if(statusDiv.style.display === 'block') statusDiv.style.display = 'none';
+        }, 3000);
+    }
+
+    function showError(msg) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = msg;
+        setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
+
+    async function stopScanner() {
         if(html5QrCode && isScanning) {
-            html5QrCode.stop().then(() => initScanner());
-        } else { initScanner(); }
-    }
-    function initScanner() {
-        const el = document.getElementById('qr-reader');
-        if(el) el.innerHTML = '';
-        html5QrCode = new Html5Qrcode('qr-reader');
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 260, height: 260 } }, (decoded) => {
-            const readerDiv = document.getElementById('qr-reader');
-            if(readerDiv) readerDiv.classList.add('scan-animation');
-            setTimeout(() => readerDiv?.classList.remove('scan-animation'), 450);
-            const resultDiv = document.getElementById('qr-result-area');
-            const resultSpan = document.getElementById('qr-result-text');
-            if(resultSpan && resultDiv) {
-                resultSpan.innerText = decoded;
-                resultDiv.style.display = 'block';
-                resultDiv.classList.add('scan-animation');
-                setTimeout(() => resultDiv.classList.remove('scan-animation'), 450);
+            try {
+                await html5QrCode.stop();
+                isScanning = false;
+                toggleBtn.textContent = '📷 Включить камеру';
+                toggleBtn.classList.remove('btn-off');
+                showStatus('📴 Камера выключена');
+            } catch(e) {
+                console.warn(e);
             }
-        }, (err) => {});
-        isScanning = true;
+        }
     }
-    document.getElementById('reset-scanner')?.addEventListener('click', () => {
-        if(html5QrCode && isScanning) html5QrCode.stop().then(() => startScanner());
-        else startScanner();
+
+    async function startScanner() {
+        try {
+            // очищаем контейнер
+            const readerDiv = document.getElementById(qrContainerId);
+            if(readerDiv) readerDiv.innerHTML = '';
+            
+            html5QrCode = new Html5Qrcode(qrContainerId);
+            const config = { fps: 10, qrbox: { width: 280, height: 280 } };
+            
+            await html5QrCode.start({ facingMode: "environment" }, config, 
+                (decoded) => {
+                    // успешное сканирование - показываем модальное окно
+                    if(decoded) {
+                        stopScanner(); // выключаем камеру после сканирования
+                        showResultModal(decoded);
+                    }
+                }, 
+                (err) => {
+                    // игнорируем обычные ошибки сканирования
+                    if(err && err.includes("No QR")) return;
+                }
+            );
+            isScanning = true;
+            toggleBtn.textContent = '🔴 Выключить камеру';
+            toggleBtn.classList.add('btn-off');
+            showStatus('✅ Камера включена. Наведите на QR-код');
+            errorDiv.style.display = 'none';
+        } catch(err) {
+            console.error("Ошибка запуска камеры:", err);
+            isScanning = false;
+            toggleBtn.textContent = '📷 Включить камеру';
+            toggleBtn.classList.remove('btn-off');
+            
+            if(err && err.toString().includes("NotFoundError")) {
+                showError("❌ Камера не найдена на устройстве");
+            } else if(err && err.toString().includes("NotAllowedError")) {
+                showError("🔒 Вы отклонили разрешение на использование камеры. Пожалуйста, разрешите доступ к камере в настройках браузера и нажмите «Включить» снова.");
+            } else {
+                showError("❌ Не удалось запустить камеру: " + (err.message || err));
+            }
+        }
+    }
+
+    // Показать красивое модальное окно с результатом
+    function showResultModal(qrData) {
+        const modal = document.getElementById('resultModal');
+        const modalText = document.getElementById('modalResultText');
+        modalText.textContent = qrData;
+        modal.style.display = 'flex';
+        
+        // анимация сканирования на главном блоке
+        const readerDiv = document.getElementById(qrContainerId);
+        if(readerDiv) readerDiv.classList.add('scan-animation');
+        setTimeout(() => readerDiv?.classList.remove('scan-animation'), 450);
+    }
+
+    // Кнопка "На главную" - закрывает модалку
+    document.getElementById('homeButton').addEventListener('click', () => {
+        const modal = document.getElementById('resultModal');
+        modal.style.display = 'none';
     });
-    window.addEventListener('DOMContentLoaded', () => startScanner());
+
+    // Клик вне модалки тоже закрывает
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('resultModal');
+        if(e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    toggleBtn.addEventListener('click', async () => {
+        if(isScanning) {
+            await stopScanner();
+        } else {
+            await startScanner();
+        }
+    });
+
+    // инициализация: камера выключена по умолчанию
+    console.log("Готово. Камера выключена, ждём кнопку.");
 </script>
 </body>
 </html>
